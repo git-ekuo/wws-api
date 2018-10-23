@@ -1,0 +1,8 @@
+.elasticbeanstalk/*
+.git
+.gitignore
+.pyc
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+.git
+.gitignore
