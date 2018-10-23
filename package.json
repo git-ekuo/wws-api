@@ -1,0 +1,13 @@
+{
+  "name": "oikolab_api",
+  "private": true,
+  "version": "0.0.0",
+  "description": "a oikolab experiment",
+  "keywords": [],
+  "author": "oikolab",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "latest",
+    "orca": "^1.1.1"
+  }
+}

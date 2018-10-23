@@ -1,0 +1,11 @@
+*.pyc
+.DS_Store
+.env
+.idea
+.ipynb_checkpoints
+venv
+venv/*
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
