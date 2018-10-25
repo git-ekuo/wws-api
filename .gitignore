@@ -5,8 +5,6 @@
 .ipynb_checkpoints
 venv
 venv/*
-data
-data/*
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
