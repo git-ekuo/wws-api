@@ -2,7 +2,7 @@
    "AWSEBDockerrunVersion": "1",
    "Volumes": [
      {
-       "ContainerDirectory": "/var/app",
+       "ContainerDirectory": "/src",
        "HostDirectory": "/var/app"
      }
    ],

@@ -1,5 +1,5 @@
-FROM itekuo/python-data-docker
+FROM itekuo/python-data-docker:latest
 
 EXPOSE 8000
 
-CMD ["gunicorn", "app:server", "-b", ":8000"]
+CMD ["/bin/bash", "bin/init.sh"]
