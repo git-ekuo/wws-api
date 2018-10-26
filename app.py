@@ -14,7 +14,7 @@ import pandas as pd
 import xarray
 import xarray as xr
 from dash.dependencies import Input, Output
-from flask import request, json
+from flask import request, json, Response, send_file
 
 # Oiko lab internal import
 from intent import handle_intent_request
@@ -324,8 +324,24 @@ def read_weather():
         data_sets.append(xarray.open_dataset(metadata_file, decode_times=False))
 
     final_ds = xarray.concat(data_sets, dim='time')
+    full_path = 'data/to_download.nc'
+    final_ds.to_netcdf(full_path, mode='w', compute=True)
+    # file = get_file(full_path)
     print(final_ds)
-    return str(final_ds)
+    return send_file(full_path, as_attachment=True, attachment_filename=_get_download_file_name(2017, 'AFG', 'Qal eh-ye Now'))
+
+
+def get_file(filename):  # pragma: no cover
+    try:
+        src = os.path.join('./', filename)
+        # Figure out how flask returns static files
+        # Tried:
+        # - render_template
+        # - send_file
+        # This should not be so non-obvious
+        return open(src, 'rb').read()
+    except IOError as exc:
+        return str(exc)
 
 
 def _get_city(city_name):
@@ -371,6 +387,12 @@ def get_weather(local_year, local_month, local_city, local_data_path):
 
 def _get_file_name(local_year, local_month, iso3, city):
     file_name = '%d-%02d-%s_%s.nc' % (local_year, local_month, iso3, city)
+    file_name = file_name.replace(' ', '_').lower()
+    return file_name
+
+
+def _get_download_file_name(local_year, iso3, city):
+    file_name = '%d-%s_%s.nc' % (local_year, iso3, city)
     file_name = file_name.replace(' ', '_').lower()
     return file_name
 
