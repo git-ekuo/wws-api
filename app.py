@@ -287,37 +287,30 @@ def read_weather():
 
     :return:
     """
+    year = request.args.get('y')
+    city_name = request.args.get('city')
+
+    if year is None or city_name is None:
+        return 'Please specify the year and the city: e.g., "?y=2017&city=new york"'
+
+    if str(year) != '2017':
+        return 'Only 2017 is supported for now'
+
+    # check city
+    checked_city = _get_city(city_name)
+    if checked_city is None:
+        return 'Cannot determine your city'
+
     bucket = 'ec2-us-east-1-oikolab'
-    print(os.getenv('AWS_ACCESS_KEY_ID'))
-    print(os.getenv('AWS_SECRET_ACCESS_KEY'))
     client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
                           config=botocore.client.Config(signature_version=botocore.UNSIGNED))
 
-    # boto3.set_stream_logger('botocore', level='DEBUG')
-    # paginator = client.get_paginator('list_objects')
-
-    keys = []
-    date = datetime.date(2017, 1, 1)  # update to desired date
-    prefix = date.strftime('processed/%Y/')
-
-    s3response = client.list_objects_v2(Bucket=bucket, Prefix=prefix)
-    response_meta = s3response.get('ResponseMetadata')
-
-    if response_meta.get('HTTPStatusCode') == 200:
-        contents = s3response.get('Contents')
-        if contents is None:
-            print("No objects are available for %s" % date.strftime('%B, %Y'))
-        else:
-            for obj in contents:
-                keys.append(obj.get('Key'))
-            print("There are %s objects available for %s\n--" % (len(keys), date.strftime('%B, %Y')))
-    else:
-        print("There was an error with your request.")
+    prefix = 'processed/%s/' % year
 
     data_sets = []
     for month in range(1, 13):
-        metadata_file = _get_file_name(2017, month, 'AFG', 'Qal eh-ye Now')
+        metadata_file = _get_file_name(2017, month, checked_city.iso3, checked_city.city)
         metadata_key = prefix + metadata_file
         print('metadata_key: ' + metadata_key)
         client.download_file(bucket, metadata_key, metadata_file)
@@ -326,9 +319,9 @@ def read_weather():
     final_ds = xarray.concat(data_sets, dim='time')
     full_path = 'data/to_download.nc'
     final_ds.to_netcdf(full_path, mode='w', compute=True)
-    # file = get_file(full_path)
     print(final_ds)
-    return send_file(full_path, as_attachment=True, attachment_filename=_get_download_file_name(2017, 'AFG', 'Qal eh-ye Now'))
+    return send_file(full_path, as_attachment=True,
+                     attachment_filename=_get_download_file_name(2017, checked_city.iso3, checked_city.city))
 
 
 def get_file(filename):  # pragma: no cover
@@ -353,13 +346,17 @@ def _get_city(city_name):
     city_list = city_list.sort_values('lat', ascending=True)
     city_list = city_list.sort_values('lng', ascending=True)
     city_list = city_list.rename(columns={'lat': 'lat', 'lng': 'lon'})
-    cities = city_list.loc[city_list["city"] == city_name]
-    if cities.empty:
-        raise Exception('Cannot find your city')
+    cities = city_list.loc[city_list["city"] == city_name.title()]
+    if not cities.empty:
+        for city in cities.itertuples():
+            return city
 
-    for city in cities.itertuples():
-        return city
+    provinces = city_list.loc[city_list["province"] == city_name]
+    if not provinces.empty:
+        for province in provinces.itertuples():
+            return province
 
+    return None
 
 def _get_data_set(local_year, local_month, city_name, local_data_path):
     """
