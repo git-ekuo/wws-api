@@ -1,20 +1,24 @@
 # Import required libraries
+import datetime
 import os
 # Web-related
 import traceback
 
+import botocore
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import numpy as np
 # Numerical stuff
 import pandas as pd
+import xarray
 import xarray as xr
 from dash.dependencies import Input, Output
 from flask import request, json
 
 # Oiko lab internal import
 from intent import handle_intent_request
+import boto3
 
 
 def get_subset(year, lat, lon):
@@ -275,6 +279,100 @@ def intent():
         traceback.print_exc()
 
     return response
+
+
+@app.server.route('/weather', methods=['GET'])
+def read_weather():
+    """
+
+    :return:
+    """
+    bucket = 'ec2-us-east-1-oikolab'
+    print(os.getenv('AWS_ACCESS_KEY_ID'))
+    print(os.getenv('AWS_SECRET_ACCESS_KEY'))
+    client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                          aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                          config=botocore.client.Config(signature_version=botocore.UNSIGNED))
+
+    # boto3.set_stream_logger('botocore', level='DEBUG')
+    # paginator = client.get_paginator('list_objects')
+
+    keys = []
+    date = datetime.date(2017, 1, 1)  # update to desired date
+    prefix = date.strftime('processed/%Y/')
+
+    s3response = client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    response_meta = s3response.get('ResponseMetadata')
+
+    if response_meta.get('HTTPStatusCode') == 200:
+        contents = s3response.get('Contents')
+        if contents is None:
+            print("No objects are available for %s" % date.strftime('%B, %Y'))
+        else:
+            for obj in contents:
+                keys.append(obj.get('Key'))
+            print("There are %s objects available for %s\n--" % (len(keys), date.strftime('%B, %Y')))
+    else:
+        print("There was an error with your request.")
+
+    data_sets = []
+    for month in range(1, 13):
+        metadata_file = _get_file_name(2017, month, 'AFG', 'Qal eh-ye Now')
+        metadata_key = prefix + metadata_file
+        print('metadata_key: ' + metadata_key)
+        client.download_file(bucket, metadata_key, metadata_file)
+        data_sets.append(xarray.open_dataset(metadata_file, decode_times=False))
+
+    final_ds = xarray.concat(data_sets, dim='time')
+    print(final_ds)
+    return str(final_ds)
+
+
+def _get_city(city_name):
+    """
+
+    :return:
+    """
+    city_list = pd.read_csv(os.path.join('data', 'simplemaps-worldcities-basic.csv'))
+    city_list = city_list.sort_values('lat', ascending=True)
+    city_list = city_list.sort_values('lng', ascending=True)
+    city_list = city_list.rename(columns={'lat': 'lat', 'lng': 'lon'})
+    cities = city_list.loc[city_list["city"] == city_name]
+    if cities.empty:
+        raise Exception('Cannot find your city')
+
+    for city in cities.itertuples():
+        return city
+
+
+def _get_data_set(local_year, local_month, city_name, local_data_path):
+    """
+
+    :param local_year:
+    :param local_month:
+    :param city_name:
+    :param local_data_path:
+    :return:
+    """
+    local_city = _get_city(city_name)
+    file_name = _get_file_name(local_year, local_month, local_city.iso3, local_city.city)
+    full_path = '%sprocessed/%s/%s' % (local_data_path, local_year, file_name)
+
+    if not os.path.isfile(full_path):
+        raise Exception(full_path + 'does not exist')
+
+    ds = xarray.open_dataset(full_path)
+    return ds
+
+
+def get_weather(local_year, local_month, local_city, local_data_path):
+    return _get_data_set(local_year, local_month, local_city, local_data_path)
+
+
+def _get_file_name(local_year, local_month, iso3, city):
+    file_name = '%d-%02d-%s_%s.nc' % (local_year, local_month, iso3, city)
+    file_name = file_name.replace(' ', '_').lower()
+    return file_name
 
 
 # Main
