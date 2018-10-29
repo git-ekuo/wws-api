@@ -23,17 +23,24 @@ class Preprocessor:
 
         :param data_path: str specifies the root folder where weather file shall be located
         """
+        self.data_path = data_path
         self.weather_file = WeatherFile(data_path)
         self.city_service = CityService()
 
-    def preprocess(self, d_year, d_data_path):
+    def process(self, year):
+        """
+        Pre-process the given year worth of weather data into a format that can be re-combined later
+
+        :param year: int
+        :return: None
+        """
         city_list = self.city_service.get_city_coordinates()
         for d_month in range(1, 13):
             data_sets = []
             try:
-                print('Processing files for %d-%d in %s' % (d_year, d_month, d_data_path))
+                print('Processing files for %d-%d in %s' % (year, d_month, self.data_path))
                 for parameter in WeatherParameter.get_all_parameters():
-                    data_sets.append(self._get_netcdf_to_process(d_year, d_month, parameter, d_data_path))
+                    data_sets.append(self._get_netcdf_to_process(year, d_month, parameter))
 
                 count = 0
                 for city in city_list.itertuples():
@@ -41,7 +48,7 @@ class Preprocessor:
                         print('Processed %s cities so far [%s]' % (count, datetime.datetime.now()))
                     city_by_month_ds = self._merge_by_city(city, data_sets)
 
-                    full_path = self.weather_file.get_processed_data_set_path(d_year, d_month, city.iso3, city.city)
+                    full_path = self.weather_file.get_processed_data_set_path(year, d_month, city.iso3, city.city)
                     city_by_month_ds.to_netcdf(full_path, mode='w', compute=True)
                     count = count + 1
             finally:

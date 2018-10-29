@@ -14,4 +14,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     year = args.year
     data_path = args.path
-    Preprocessor.preprocess(year, data_path)
+    preprocessor = Preprocessor(data_path)
+    preprocessor.process(year)
