@@ -261,7 +261,7 @@ def read_weather():
         data_sets.append(xarray.open_dataset(metadata_file, decode_times=False))
 
     final_ds = xarray.concat(data_sets, dim='time')
-    full_path = 'data/to_download.nc'
+    full_path = '/tmp/weather_temp_storage.nc'
     final_ds.to_netcdf(full_path, mode='w', compute=True)
     print(final_ds)
     return send_file(full_path, as_attachment=True,

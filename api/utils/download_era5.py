@@ -9,7 +9,6 @@ import os
 
 c = cdsapi.Client()
 
-# years = list(range(2010, 2019))
 parameters = ['2m_dewpoint_temperature',
               '2m_temperature',
               '10m_v_component_of_wind',
