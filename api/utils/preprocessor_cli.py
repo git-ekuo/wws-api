@@ -3,7 +3,7 @@ A command prompt CLI to help ingest new data
 """
 import argparse
 
-from api.ingest.preprocess import Preprocessor
+from api.ingest.preprocessor import Preprocessor
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pre-process files for year-month combination')

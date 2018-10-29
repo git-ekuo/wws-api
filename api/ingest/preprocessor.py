@@ -9,6 +9,7 @@ Generated files is structured as [year]/[month]/[year-month-variable]_era5.nc
 import datetime
 
 import xarray
+import numpy as np
 
 from api.city.city_service import CityService
 from api.core.weather_file import WeatherFile
@@ -55,8 +56,18 @@ class Preprocessor:
     def _merge_by_city(self, city, data_sets):
         all_variables = []
         for data_set in data_sets:
-            one_variable_ds = data_set.sel(latitude=city.lat, longitude=city.lon % 360, method='nearest').drop(
-                ['longitude', 'latitude'])
+            lat = city.lat
+            lon = city.lon
+            if city.lon > 0:
+                data_set = data_set.sel(latitude=slice(np.floor(lat * 4 + 1) / 4, np.floor(lat * 4) / 4),
+                                        longitude=slice(np.floor(lon * 4) / 4 % 360, np.floor(lon * 4 + 1) / 4 % 360))
+            elif 0 > city.lon > -0.25:
+                data_set = data_set.roll(longitude=1)
+                data_set = data_set.sel(latitude=slice(np.floor(lat * 4 + 1) / 4, np.floor(lat * 4) / 4),
+                                        longitude=slice(np.floor(lon * 4) / 4 % 360, np.floor(lon * 4 + 1) / 4 % 360))
+
+            one_variable_ds = data_set.interp(latitude=lat, longitude=lon % 360)
+
             all_variables.append(one_variable_ds)
 
         return xarray.merge(all_variables)
