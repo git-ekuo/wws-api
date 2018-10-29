@@ -1,3 +1,11 @@
+"""
+This reads ECMWF ERA5 reanalysis dataset (from a pre-defined path) and generates yearly ERA5 (in NetCDF format)
+for major cities and locations.
+
+This depends on `data/simplemaps-worldcities-basic.csv` to identify a set of major cities in the world.
+
+Generated files is structured as [year]/[month]/[year-month-variable]_era5.nc
+"""
 import argparse
 import datetime
 import os

@@ -1,3 +1,7 @@
+"""
+This reads NetCDF ECMWF ERA5 datasets (processed by `preprocessor.py`) from a pre-configured S3 bucket.
+"""
+
 import pandas as pd
 import os
 import xarray
@@ -20,6 +24,7 @@ def _get_city(city_name):
 
     for city in cities.itertuples():
         return city
+
 
 def _get_data_set(local_year, local_month, city_name, local_data_path):
     """

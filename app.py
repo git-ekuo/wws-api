@@ -1,9 +1,9 @@
 # Import required libraries
-import datetime
 import os
 # Web-related
 import traceback
 
+import boto3
 import botocore
 import dash
 import dash_core_components as dcc
@@ -14,20 +14,87 @@ import pandas as pd
 import xarray
 import xarray as xr
 from dash.dependencies import Input, Output
-from flask import request, json, Response, send_file
+from flask import request, json, send_file
 
-# Oiko lab internal import
+# OikoLab internal import
 from intent import handle_intent_request
-import boto3
 
 
-def get_subset(year, lat, lon):
+def _get_city_options():
+    city_list = pd.read_csv(os.path.join('data', 'simplemaps-worldcities-basic.csv'))
+    city_list = city_list.sort_values('pop', ascending=False)
+    city_list['loc'] = city_list['city'] + ', ' + city_list['country']
+    city_list = city_list.rename(columns={'lat': 'Lat', 'lng': 'Lon'})
+    city_options = [{'label': city, 'value': index} for city, index in zip(city_list['loc'], city_list.index)]
+    return city_options
+
+
+def construct_app():
+    app = dash.Dash(__name__, assets_folder='assets', static_folder='assets')  # static url path is 'assets' by default
+    app.css.append_css({'external_url': 'https://fonts.googleapis.com/css?family=Open+Sans|Roboto'})
+
+    app.title = 'OikoLab'
+    app.layout = html.Div(
+        # Controls
+        children=[
+            dcc.Markdown(
+'''
+# OikoLab
+
+## A simple, fast access to ERA5 reanalysis data
+---
+'''
+            ),
+            html.Div(
+                className='four columns container-input',
+                children=[html.Div(
+                    children=[
+                        html.Div(id='latlon_dropdown_text',
+                                 style={'display': 'block',
+                                        'margin-bottom': '20px'},
+                                 children='City'),
+                        dcc.Dropdown(id='latlon_dropdown',
+                                     options=_get_city_options(),
+                                     placeholder='Select a city',
+                                     value=''
+                                     )
+                    ]
+                ),
+                ]
+
+            )
+            ,
+            # Charts based on the controls
+            html.Div(
+                id='section-chart',
+                # Fix the height, because dash charts height is weirdly large when there is no data.
+                style={'height': '376px'},
+                className='eight columns',
+                children=[
+                    html.Div(
+                        children=[
+                            html.Div(style={'margin-bottom': '40px'},
+                                     children=[dcc.Graph(id='elec_usage', config={'displayModeBar': False})],
+                                     )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+    return app
+
+
+app = construct_app()
+server = app.server
+
+
+def get_subset(lat, lon):
     """
     Function to get monthly average temperature with global coverage (0.25 x 0.25)
     Source: ECMWF ERA5 dataset
     Input: get_subset(year,lat,lon)
 
-    :param year:
     :param lat:
     :param lon:
     :return:
