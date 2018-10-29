@@ -7,46 +7,23 @@ The size of ERA5 dataset is huge, it's expected that it's downloaded to a cheap 
 import cdsapi
 import os
 
+from api.core.weather_file import WeatherFile
+from api.core.weather_parameter import WeatherParameter
+
 c = cdsapi.Client()
-
-parameters = ['2m_dewpoint_temperature',
-              '2m_temperature',
-              '10m_v_component_of_wind',
-              '10m_u_component_of_wind',
-              'cloud_base_height',
-              'snow_depth',
-              'snowfall',
-              'snow_density',
-              'soil_temperature_level_1',
-              'soil_temperature_level_2',
-              'soil_temperature_level_3',
-              'soil_temperature_level_4',
-              'surface_pressure',
-              'downward_uv_radiation_at_the_surface',
-              'surface_solar_radiation_downwards',
-              'surface_thermal_radiation_downwards',
-              'total_cloud_cover',
-              'total_precipitation',
-              'total_column_rain_water',
-              'total_sky_direct_solar_radiation_at_surface',
-              'total_column_water_vapour',
-              'forecast_albedo'
-              ]
-
-data_path = 's3bucket'
+weather_file = WeatherFile('s3bucket')
+original_file_extension = weather_file.get_original_file_extension()
 
 for y in [2016, 2015, 2014, 2013, 2012]:
-    directory = "/%s/%s" % (data_path, str(y))
+
+    directory = weather_file.get_or_create_original_folder(str(y))
 
     for m in range(1, 13):
-        for parameter in parameters:
-            filename = '%s_%d_%02d_era5.grb' % (parameter, y, m)
+        for parameter in WeatherParameter.get_all_parameters():
+
+            filename = weather_file.get_original_file_name(year=y, month=m, parameter=parameter)
             try:
-
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-
-                file_list = [file for file in os.listdir(directory) if file.endswith('.grb')]
+                file_list = [file for file in os.listdir(directory) if file.endswith(original_file_extension)]
 
                 if filename not in file_list:
                     print('year: %d month:%d' % (y, m))

@@ -28,4 +28,6 @@ A simple weather web service API, for energy related analysis.
     ├── LICENSE
     └── README.md
 
+##### Class roles & conventions
+- Any files that ends with `_service` indicates it's a role potentially to be hosted individually outside the scope of this service.
 
