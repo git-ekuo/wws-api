@@ -11,7 +11,7 @@ from api.core.weather_file import WeatherFile
 from api.core.weather_parameter import WeatherParameter
 
 c = cdsapi.Client()
-weather_file = WeatherFile('s3bucket')
+weather_file = WeatherFile('/s3bucket/')
 original_file_extension = weather_file.get_original_file_extension()
 
 for y in [2016, 2015, 2014, 2013, 2012]:

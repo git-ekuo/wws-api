@@ -12,6 +12,8 @@ class WeatherFile:
 
         :param data_path: specifies the path where weather files are located, and shall be saved to
         """
+        if not data_path.endswith('/'):
+            data_path = data_path + '/'
         self.data_path = data_path
         """ File extension for reading original weather files """
         self.file_extension = 'grb'
@@ -23,7 +25,7 @@ class WeatherFile:
         :param year: str
         :return: str
         """
-        directory = "/%s/%s/" % (self.data_path, str(year))
+        directory = "%s%s/" % (self.data_path, str(year))
         if not os.path.exists(directory):
             os.makedirs(directory)
 
