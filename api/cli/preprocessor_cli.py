@@ -2,8 +2,9 @@
 A command prompt CLI to help ingest new data
 """
 import argparse
+import sys
 
-from api.ingest.preprocessor import Preprocessor
+# from api.ingest.preprocessor import Preprocessor
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pre-process files for year-month combination')
@@ -14,5 +15,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     year = args.year
     data_path = args.path
-    preprocessor = Preprocessor(data_path)
-    preprocessor.process(year)
+    # preprocessor = Preprocessor(data_path)
+    # preprocessor.process(year)
