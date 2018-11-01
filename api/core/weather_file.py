@@ -1,20 +1,51 @@
 """
-This defines the file naming convention for naming and location of a weather file
+This defines the file naming convention for naming and location of a weather file.
+WeatherFile operates in 2 modes: file, s3. If WeatherFile operates in S3, it assumes the environment includes ACCESS_KEY_ID,
+and SECRET_KEY information.
 """
 import os
+from collections import deque
+
+import boto3
+import botocore
+from boto3.s3.transfer import TransferConfig
+from botocore.config import Config
 
 
 class WeatherFile:
+    """in s3 mode, files are located via s3 boto3 library """
+    MODE_S3 = 's3'
 
-    def __init__(self, data_path: str):
+    """in file mode, files are located through folder lookups """
+    MODE_FILE = 'file'
+
+    def __init__(self, prefix_path: str):
         """
         Constructor
 
-        :param data_path: specifies the path where weather files are located, and shall be saved to
+        :param prefix_path: specifies the path where weather files are located, and shall be saved to
+                            if the prefix path starts as `s3://`, then weather file will use the s3
+                            boto3 client to connect for locating files
         """
-        if not data_path.endswith('/'):
-            data_path = data_path + '/'
-        self.data_path = data_path
+        if not prefix_path.endswith('/'):
+            prefix_path = prefix_path + '/'
+
+        self.mode = self.MODE_FILE
+        self.data_path = prefix_path
+
+        if prefix_path.startswith('s3://'):
+            self.mode = WeatherFile.MODE_S3
+            data_paths = prefix_path.split('/')
+            if len(data_paths) < 2:
+                raise Exception('data path is invalid')
+            path_deque = deque(prefix_path)
+            self.bucket = path_deque.popleft()
+            self.data_path = '/'.join(path_deque)
+
+            TransferConfig(max_concurrency=5)
+            self.client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                                       aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                                       config=Config(signature_version=botocore.UNSIGNED))
         """ File extension for reading original weather files """
         self.file_extension = 'grb'
 
@@ -38,9 +69,12 @@ class WeatherFile:
         :param year: str
         :return: str
         """
-        directory = "%s%s/" % (self.data_path, str(year))
-        if not os.path.exists(directory):
-            raise Exception('Original file for %s cannot be found' % year)
+        if self.mode == WeatherFile.MODE_FILE:
+            directory = "%s%s/" % (self.data_path, str(year))
+            if not os.path.exists(directory):
+                raise Exception('Original file for %s cannot be found' % directory)
+            return directory
+
 
     def get_processed_file_name(self, year, month, iso3, city):
         """

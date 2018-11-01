@@ -3,7 +3,7 @@ A command prompt CLI to help ingest new data
 """
 import argparse
 import os
-import asyncio
+import sys
 
 import boto3
 import botocore
@@ -13,8 +13,9 @@ from api.core.weather_file import WeatherFile
 from api.core.weather_parameter import WeatherParameter
 from api.ingest.preprocessor import Preprocessor
 
+
 def _copy_file_from_s3(s3_client, year, month):
-    parameters = WeatherParameter.get_all_parameters();
+    parameters = WeatherParameter.get_all_parameters()
     weather_file = WeatherFile(data_path='/s3bucket/')
     destination_folder = '/nvm/'
 
@@ -28,14 +29,13 @@ def _copy_file_from_s3(s3_client, year, month):
         s3_client.download_file(bucket, weather_file_key, weather_file)
 
 
-def _remove_temporary_file(s3_client, year, month):
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pre-process files for year-month combination')
     parser.add_argument('year', type=int, help='an integer representing the year, e.g., 2017')
-    parser.add_argument('min_month', type=int, help='the month from which preprocessing starts, e.g., 1 for january (inclusive)')
-    parser.add_argument('max_month', type=int, help='the month from which preprocessing finishes, e.g., 2 for februrary (inclusive)')
+    parser.add_argument('min_month', type=int,
+                        help='the month from which preprocessing starts, e.g., 1 for january (inclusive)')
+    parser.add_argument('max_month', type=int,
+                        help='the month from which preprocessing finishes, e.g., 2 for februrary (inclusive)')
     parser.add_argument('path', help='a string indicating the system path leading to where the data is. '
                                      'e.g., /s3bucket/')
 
@@ -46,6 +46,8 @@ if __name__ == '__main__':
                           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
                           config=botocore.client.Config(signature_version=botocore.UNSIGNED))
 
+    for path in sys.path:
+        print('path: ' + path)
 
     # Argument extraction
     args = parser.parse_args()
@@ -58,7 +60,7 @@ if __name__ == '__main__':
     _copy_file_from_s3(client, 2016, 1)
 
     # # Go through the months as specified
-    # preprocessor = Preprocessor(data_path)
-    # for month in range(min_month, max_month + 1):
-    #     print('processing for %s/%s' % (year, month))
-    #     preprocessor.process(year=year, month=month)
+    preprocessor = Preprocessor(data_path)
+    for month in range(min_month, max_month + 1):
+        print('processing for %s/%s' % (year, month))
+        preprocessor.process(year=year, month=month)

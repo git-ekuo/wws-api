@@ -38,7 +38,7 @@ class Preprocessor:
         city_list = self.city_service.get_city_coordinates()
         data_sets = []
         try:
-            print('Processing files for %d-%d in %s' % (year, month, self.data_path))
+            print('Processing files for %d-%2d in %s' % (year, month, self.data_path))
             for parameter in WeatherParameter.get_all_parameters():
                 data_sets.append(self._get_netcdf_to_process(year, month, parameter))
 
@@ -63,6 +63,7 @@ class Preprocessor:
     def _merge_by_city(self, city, data_sets):
         all_variables = []
         for data_set in data_sets:
+            print('merging %s' % city)
             lat = city.lat
             lon = city.lon
             if city.lon > 0:
