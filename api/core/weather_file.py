@@ -31,6 +31,17 @@ class WeatherFile:
 
         return directory
 
+    def get_original_folder(self, year):
+        """
+        This returns the folder path for the given year where user can locate the original data sets.
+
+        :param year: str
+        :return: str
+        """
+        directory = "%s%s/" % (self.data_path, str(year))
+        if not os.path.exists(directory):
+            raise Exception('Original file for %s cannot be found' % year)
+
     def get_processed_file_name(self, year, month, iso3, city):
         """
         This returns the convention of a weather file given a year-month, and country(iso3), and its city

@@ -27,33 +27,33 @@ class Preprocessor:
         self.weather_file = WeatherFile(data_path)
         self.city_service = CityService()
 
-    def process(self, year):
+    def process(self, year, month):
         """
         Pre-process the given year worth of weather data into a format that can be re-combined later
 
         :param year: int
+        :param month: int
         :return: None
         """
         city_list = self.city_service.get_city_coordinates()
-        for d_month in range(1, 13):
-            data_sets = []
-            try:
-                print('Processing files for %d-%d in %s' % (year, d_month, self.data_path))
-                for parameter in WeatherParameter.get_all_parameters():
-                    data_sets.append(self._get_netcdf_to_process(year, d_month, parameter))
+        data_sets = []
+        try:
+            print('Processing files for %d-%d in %s' % (year, month, self.data_path))
+            for parameter in WeatherParameter.get_all_parameters():
+                data_sets.append(self._get_netcdf_to_process(year, month, parameter))
 
-                count = 0
-                for city in city_list.itertuples():
-                    if count % 1000 == 0:
-                        print('Processed %s cities so far [%s]' % (count, datetime.datetime.now()))
-                    city_by_month_ds = self._merge_by_city(city, data_sets)
+            count = 0
+            for city in city_list.itertuples():
+                if count % 1000 == 0:
+                    print('Processed %s cities so far [%s]' % (count, datetime.datetime.now()))
+                city_by_month_ds = self._merge_by_city(city, data_sets)
 
-                    full_path = self.weather_file.get_processed_data_set_path(year, d_month, city.iso3, city.city)
-                    city_by_month_ds.to_netcdf(full_path, mode='w', compute=True)
-                    count = count + 1
-            finally:
-                for data_set in data_sets:
-                    data_set.close()
+                full_path = self.weather_file.get_processed_data_set_path(year, month, city.iso3, city.city)
+                city_by_month_ds.to_netcdf(full_path, mode='w', compute=True)
+                count = count + 1
+        finally:
+            for data_set in data_sets:
+                data_set.close()
 
     def _get_netcdf_to_process(self, local_year, local_month, local_parameter):
         data_file = self.weather_file.get_original_data_set_path(local_year, local_month, local_parameter)
