@@ -15,7 +15,7 @@ from api.ingest.preprocessor import Preprocessor
 
 def _copy_file_from_s3(s3_client, year, month):
     parameters = WeatherParameter.get_all_parameters()
-    weather_file = WeatherFile(data_path='/s3bucket/')
+    weather_file = WeatherFile('/s3bucket/')
     destination_folder = '/nvm/%s/' % year
 
     for parameter in parameters:
@@ -38,7 +38,7 @@ def _download_file(s3_client, from_path, to_path):
 
 def _remove_files(year, month):
     parameters = WeatherParameter.get_all_parameters()
-    weather_file = WeatherFile(data_path='/s3bucket/')
+    weather_file = WeatherFile('/s3bucket/')
     destination_folder = '/nvm/'
 
     for parameter in parameters:
