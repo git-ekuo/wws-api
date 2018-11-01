@@ -56,14 +56,14 @@ def main_procedure(min_month, max_month, year):
                           config=botocore.client.Config(signature_version=botocore.UNSIGNED))
 
     for current_month in range(min_month, max_month + 1):
-        await _copy_file_from_s3(client, year, current_month)
+        _copy_file_from_s3(client, year, current_month)
 
         preprocessor = Preprocessor('/nvm/')
         for month in range(min_month, max_month + current_month):
             print('processing for %s/%s' % (year, month))
             preprocessor.process(year=year, month=current_month)
 
-        await _remove_files(year, current_month)
+        _remove_files(year, current_month)
 
 
 if __name__ == '__main__':
