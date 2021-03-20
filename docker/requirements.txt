@@ -32,7 +32,7 @@ ipython==5.0.0
 ipython-genutils==0.2.0
 ipywidgets==7.4.2
 ItsDangerous==1.0.0
-Jinja2==2.10
+Jinja2==2.11.3
 jsonschema==2.6.0
 kiwisolver==1.0.1
 MarkupSafe==1.0
